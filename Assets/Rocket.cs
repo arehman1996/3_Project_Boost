@@ -2,9 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
 
 public class Rocket : MonoBehaviour
 {
+    [SerializeField] float rcsThrust = 100f; //rcs means reaction control system
+    [SerializeField] float mainThrust = 100f;
+
     Rigidbody rigidBody;
     AudioSource audioSource;
 
@@ -19,14 +24,30 @@ public class Rocket : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        ProcessInput();
+        Thrust();
+        Rotate();
     }
 
-    private void ProcessInput()
+    void OnCollisionEnter(Collision collision) //type Collision, variable collision
+    {
+        print("Collided");
+        switch (collision.gameObject.tag) //tag of the game object e.g friendly, respawn, etc. use "default" if need to use without the tag
+        {
+            case "Friendly":
+                // do nothing
+                print("OK");
+                break;
+            case "Respawn":
+                print("game over");
+                break;
+        }
+    }
+
+    private void Thrust()
     {
         if (Input.GetKey(KeyCode.W))
         {
-            rigidBody.AddRelativeForce(Vector3.up); //can thrust while rotating
+            rigidBody.AddRelativeForce(Vector3.up * mainThrust); //can thrust while rotating
             if (!audioSource.isPlaying) //so it doesnt layer
             {
                 audioSource.Play();
@@ -36,17 +57,25 @@ public class Rocket : MonoBehaviour
         {
             audioSource.Stop();
         }
-
-
-
-            if (Input.GetKey(KeyCode.A))
-            {
-                transform.Rotate(Vector3.forward);
-            }
-
-            else if (Input.GetKey(KeyCode.D))
-            {
-                transform.Rotate(-Vector3.forward);
-            }
     }
+
+    private void Rotate()
+    {
+        rigidBody.freezeRotation = true;
+        float rotationThisFrame = rcsThrust * Time.deltaTime;
+
+        if (Input.GetKey(KeyCode.A))
+        {
+            transform.Rotate(Vector3.forward * rotationThisFrame);
+        }
+        else if (Input.GetKey(KeyCode.D))
+        {
+            transform.Rotate(-Vector3.forward * rotationThisFrame);
+        }
+
+        rigidBody.freezeRotation = false;
+
+    }
+
+
 }
