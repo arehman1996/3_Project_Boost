@@ -6,6 +6,13 @@ public class Rocket : MonoBehaviour
 {
     [SerializeField] float rcsThrust = 100f; //rcs means reaction control system
     [SerializeField] float mainThrust = 100f;
+    [SerializeField] AudioClip mainEngine;
+    [SerializeField] AudioClip death;
+    [SerializeField] AudioClip success;
+
+    [SerializeField] ParticleSystem mainEngineParticles;
+    [SerializeField] ParticleSystem successParticles;
+    [SerializeField] ParticleSystem deathParticles;
 
     Rigidbody rigidBody;
     AudioSource audioSource;
@@ -26,7 +33,7 @@ public class Rocket : MonoBehaviour
     {
         if (state == State.Alive)
         {
-            Thrust();
+            RespondToThrustInput();
             Rotate();
         }
     }
@@ -41,19 +48,36 @@ public class Rocket : MonoBehaviour
                 case "Friendly":
 
                     break;
-                case "Finish":
-                    state = State.Transcending;
-                    Invoke("LoadNextLevel", 1f); //parameterise time
-                    break;
-                default:
-                    print("Hit something deadly");
-                    state = State.Dying;
-                    Invoke("LoadFirstLevel", 1f);
-                    break;
-            }
+            case "Finish":
+                StartSuccessSequence();
+                break;
+            default:
+                StartDeathSequence();
+                break;
+        }
 
 
     }
+
+    private void StartSuccessSequence()
+    {
+        state = State.Transcending;
+        successParticles.Play();
+        audioSource.Stop();
+        audioSource.PlayOneShot(success);
+        Invoke("LoadNextLevel", 1f); //parameterise time
+    }
+
+    private void StartDeathSequence()
+    {
+        state = State.Dying;
+        deathParticles.Play();
+        audioSource.Stop();
+        audioSource.PlayOneShot(death);
+        Invoke("LoadFirstLevel", 1f);
+    }
+
+
 
     private void LoadNextLevel()
     {
@@ -66,20 +90,27 @@ public class Rocket : MonoBehaviour
     }
 
 
-    private void Thrust()
+    private void RespondToThrustInput()
     {
         if (Input.GetKey(KeyCode.W))
         {
-            rigidBody.AddRelativeForce(Vector3.up * mainThrust); //can thrust while rotating
-            if (!audioSource.isPlaying) //so it doesnt layer
-            {
-                audioSource.Play();
-            }
+            ApplyThrust();
         }
         else
         {
             audioSource.Stop();
+            mainEngineParticles.Stop();
         }
+    }
+
+    private void ApplyThrust()
+    {
+        rigidBody.AddRelativeForce(Vector3.up * mainThrust); //can thrust while rotating
+        if (!audioSource.isPlaying) //so it doesnt layer
+        {
+            audioSource.PlayOneShot(mainEngine);
+        }
+        mainEngineParticles.Play();
     }
 
     private void Rotate()
