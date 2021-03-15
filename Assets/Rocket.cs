@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 
@@ -13,6 +10,9 @@ public class Rocket : MonoBehaviour
     Rigidbody rigidBody;
     AudioSource audioSource;
 
+    enum State { Alive, Dying, Transcending }
+    State state = State.Alive;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -20,28 +20,51 @@ public class Rocket : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
     }
 
-  
+
     // Update is called once per frame
     void Update()
     {
-        Thrust();
-        Rotate();
+        if (state == State.Alive)
+        {
+            Thrust();
+            Rotate();
+        }
     }
 
     void OnCollisionEnter(Collision collision) //type Collision, variable collision
     {
         print("Collided");
-        switch (collision.gameObject.tag) //tag of the game object e.g friendly, respawn, etc. use "default" if need to use without the tag
-        {
-            case "Friendly":
-                // do nothing
-                print("OK");
-                break;
-            case "Respawn":
-                print("game over");
-                break;
-        }
+        if (state != State.Alive) { return; } //ignore collisions when dead
+
+            switch (collision.gameObject.tag) //tag of the game object e.g friendly, respawn, etc. use "default" if need to use without the tag
+            {
+                case "Friendly":
+
+                    break;
+                case "Finish":
+                    state = State.Transcending;
+                    Invoke("LoadNextLevel", 1f); //parameterise time
+                    break;
+                default:
+                    print("Hit something deadly");
+                    state = State.Dying;
+                    Invoke("LoadFirstLevel", 1f);
+                    break;
+            }
+
+
     }
+
+    private void LoadNextLevel()
+    {
+        SceneManager.LoadScene(1); // to do - make for more than 2 levels
+    }
+
+    private void LoadFirstLevel()
+    {
+        SceneManager.LoadScene(0);
+    }
+
 
     private void Thrust()
     {
